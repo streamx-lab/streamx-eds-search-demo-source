@@ -1,1 +1,1 @@
-/* footer container block js*/
+/* footer container block js */

@@ -1,36 +1,30 @@
 {
-  "name": "@adobe/aem-guides-boilerplate",
+  "name": "@adobe/aem-boilerplate",
   "private": true,
-  "version": "1.0.0",
-  "description": "Adobe Edge Delivery Services template for AEM Guides",
+  "version": "1.3.0",
+  "description": "Starter project for Adobe Helix",
   "scripts": {
     "lint:js": "eslint .",
-    "lint:css": "stylelint blocks/**/*.css styles/*.css",
+    "lint:css": "stylelint \"blocks/**/*.css\" \"styles/*.css\"",
     "lint": "npm run lint:js && npm run lint:css",
-    "semantic-release": "semantic-release --debug"
+    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adobe/aem-guides-boilerplate.git"
+    "url": "git+https://github.com/adobe/aem-boilerplate.git"
   },
   "author": "Adobe",
   "license": "Apache License 2.0",
   "bugs": {
-    "url": "https://github.com/adobe/aem-guides-boilerplate/issues"
+    "url": "https://github.com/adobe/aem-boilerplate/issues"
   },
-  "homepage": "https://github.com/adobe/aem-guides-boilerplate#readme",
+  "homepage": "https://github.com/adobe/aem-boilerplate#readme",
   "devDependencies": {
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/exec": "6.0.3",
-    "@semantic-release/git": "10.0.1",
-    "semantic-release": "23.0.0",
-    "@babel/core": "7.23.7",
-    "@babel/eslint-parser": "7.23.3",
-    "chai": "5.0.0",
-    "eslint": "8.56.0",
+    "@babel/eslint-parser": "7.29.7",
+    "eslint": "8.57.1",
     "eslint-config-airbnb-base": "15.0.0",
-    "eslint-plugin-import": "2.29.1",
-    "stylelint": "16.1.0",
-    "stylelint-config-standard": "36.0.0"
+    "eslint-plugin-import": "2.32.0",
+    "stylelint": "17.15.0",
+    "stylelint-config-standard": "40.0.0"
   }
 }

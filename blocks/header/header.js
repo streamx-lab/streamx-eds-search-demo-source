@@ -109,6 +109,42 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
 }
 
 /**
+ * Builds the container the nav search input mounts into. The library owns
+ * all of the input's markup (see loadInlineSearch in scripts/lazy.js); this
+ * just gives it a place to mount, with no wrapping <form> for the library's
+ * own Enter-to-submit handling to race against.
+ * @returns {Element} The nav search element
+ */
+function createNavSearch() {
+  const navSearch = document.createElement('div');
+  navSearch.className = 'nav-search';
+
+  const mount = document.createElement('div');
+  mount.className = 'nav-search-mount';
+  navSearch.append(mount);
+
+  return navSearch;
+}
+
+/**
+ * Parses an authored config block (two-column key|value rows) into an object.
+ * Mirrors the search module's getEDSConfig so the nav search is authored the
+ * same way as the search blocks, without coupling to the hashed search bundle.
+ * @param {Element} block The `.search-config` block whose rows hold the config
+ * @returns {Object} Parsed key/value config
+ */
+function parseSearchConfig(block) {
+  const config = {};
+  block.querySelectorAll(':scope > div').forEach((row) => {
+    const [keyEl, valueEl] = row.querySelectorAll(':scope > div');
+    const key = keyEl?.textContent?.trim();
+    const value = valueEl?.textContent?.trim();
+    if (key && value) config[key] = value;
+  });
+  return config;
+}
+
+/**
  * loads and decorates the header, mainly the nav
  * @param {Element} block The header block element
  */
@@ -149,6 +185,25 @@ export default async function decorate(block) {
         }
       });
     });
+  }
+
+  const navTools = nav.querySelector('.nav-tools');
+  if (navTools) {
+    const searchIcon = navTools.querySelector('span.icon-search');
+    if (searchIcon) {
+      const iconContainer = searchIcon.closest('p');
+      const navSearch = createNavSearch();
+      if (iconContainer) iconContainer.replaceWith(navSearch);
+      else navTools.prepend(navSearch);
+
+      const searchConfigBlock = nav.querySelector('.search-config');
+      if (searchConfigBlock) {
+        const searchConfig = parseSearchConfig(searchConfigBlock);
+        searchConfigBlock.remove();
+        const mount = navSearch.querySelector('.nav-search-mount');
+        if (mount) mount.dataset.searchConfig = JSON.stringify(searchConfig);
+      }
+    }
   }
 
   // hamburger for mobile

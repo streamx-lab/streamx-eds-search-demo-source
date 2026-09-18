@@ -200,13 +200,14 @@ header nav .nav-sections ul > li > ul > li {
     position: relative;
     padding-right: 16px;
     cursor: pointer;
+    min-height: 24px;
   }
 
   header nav .nav-sections .nav-drop::after {
     content: '';
     display: inline-block;
     position: absolute;
-    top: 0.5em;
+    top: 0.25em;
     right: 2px;
     transform: rotate(135deg);
     width: 6px;

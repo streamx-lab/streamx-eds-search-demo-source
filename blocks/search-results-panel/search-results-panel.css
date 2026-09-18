@@ -1,0 +1,30 @@
+/* BEM class names are set by the renderers in search-results-panel.js */
+/* stylelint-disable selector-class-pattern */
+.custom-result-item-render__title {
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.custom-suggestion-item-render {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+a.custom-suggestion-item-render {
+    color: var(--text-color);
+}
+
+.custom-suggestion-item-render__content {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.custom-suggestion-item-render__content em {
+    background: rgb(20 115 230 / 12%);
+    color: var(--text);
+    font-style: normal;
+    font-weight: 700;
+}

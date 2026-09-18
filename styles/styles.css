@@ -38,6 +38,9 @@
 
   /* nav height */
   --nav-height: 64px;
+
+  /* stacking of the StreamX search input */
+  --stx-z-query-input: 1;
 }
 
 /* fallback fonts */

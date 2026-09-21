@@ -63,6 +63,7 @@ jobs:
     if: needs.parse-resources.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix: ${{ fromJson(needs.parse-resources.outputs.matrix) }}
       fail-fast: false
     steps:

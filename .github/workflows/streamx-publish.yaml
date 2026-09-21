@@ -4,6 +4,8 @@ on:
   repository_dispatch:
     types:
       - resource-published
+      - resources-published
+      - bulk-published
 
 permissions:
   id-token: write
@@ -21,16 +23,18 @@ jobs:
         env:
           CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
-          echo "Status: ${{ github.event.client_payload.status }}"
+          echo "Processing incoming dispatch..."
 
-          STATUS="${{ github.event.client_payload.status }}"
-           if [ "$STATUS" != "200" ] && [ "$STATUS" != "204" ]; then
-            echo "Invalid status: $STATUS. Aborting workflow."
+          # Fallback status check to handle cases where root status is hidden in batch payloads
+          STATUS=$(echo "$CLIENT_PAYLOAD" | jq -r '.status // 200')
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "204" ]; then
+            echo "Invalid status: $STATUS. Aborting."
             echo "should_run=false" >> "$GITHUB_OUTPUT"
             echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
+          # Extract paths dynamically whether it is a single item or a batch array
           MATRIX_JSON=$(echo "$CLIENT_PAYLOAD" | jq -c '
             if .paths then
               [ .paths[] | if type == "object" then .path else . end ]
@@ -39,12 +43,12 @@ jobs:
             else
               []
             end
-            | map(select(endswith(".md") or endswith(".json")))
+            | map(select(type == "string" and (endswith(".md") or endswith(".json"))))
             | {include: map({path: .})}
           ')
 
           COUNT=$(echo "$MATRIX_JSON" | jq '.include | length')
-          echo "Found $COUNT valid resources to process."
+          echo "Found $COUNT valid target resources."
 
           if [ "$COUNT" -eq 0 ]; then
             echo "should_run=false" >> "$GITHUB_OUTPUT"
@@ -60,18 +64,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.parse-resources.outputs.matrix) }}
-      fail-fast: false # prevents one failed file from blocking the rest of the batch
+      fail-fast: false
     steps:
-      - name: Prepare variables for Markdown (.md)
+      - name: Prepare ingestion variables (.md)
         if: endsWith(matrix.path, '.md')
-        id: vars-md
+        id: vars
         shell: bash
         run: |
+          sleep 1s
           streamx_subject=$(echo "${{ matrix.path }}" | sed 's/\.md$//g')
           page_path=$(echo "${{ matrix.path }}" | sed 's/\.md$//g' | sed 's/index//g')
           eds_page_url="${{ vars.EDS_DOMAIN_URL }}$page_path"
           eds_plain_page_url="${{ vars.EDS_DOMAIN_URL }}$streamx_subject.plain.html"
-
+          echo "Page URL: $eds_page_url"
+          echo "CloudEvent subject: ${streamx_subject}"
+          echo "Plain page URL: $eds_plain_page_url"
+          echo "CloudEvent subject plain: $streamx_subject.plain.html"
           echo "streamx_subject=${streamx_subject}" >> "$GITHUB_OUTPUT"
           echo "eds_page_url=$eds_page_url" >> "$GITHUB_OUTPUT"
           echo "streamx_subject_plain=$streamx_subject.plain.html" >> "$GITHUB_OUTPUT"
@@ -89,11 +97,11 @@ jobs:
           streamx-ingestion-token: ${{ secrets.STREAMX_INGESTION_GH_TOKEN }}
           event-type: 'com.streamx.blueprints.page.published.v1'
           event-data: '{"type": "page/eds"}'
-          external-resource-url: ${{ steps.vars-md.outputs.eds_page_url }}
-          subject: ${{ steps.vars-md.outputs.streamx_subject }}
+          external-resource-url: ${{ steps.vars.outputs.eds_page_url }}
+          subject: ${{ steps.vars.outputs.streamx_subject }}
 
       - name: Run publish plain nav/footer to StreamX
-        if: endsWith(matrix.path, '.md') && (endsWith(steps.vars-md.outputs.streamx_subject_plain, 'nav.plain.html') || endsWith(steps.vars-md.outputs.streamx_subject_plain, 'footer.plain.html'))
+        if: endsWith(matrix.path, '.md') && (endsWith(steps.vars.outputs.streamx_subject_plain, 'nav.plain.html') || endsWith(steps.vars.outputs.streamx_subject_plain, 'footer.plain.html'))
         uses: streamx-hub/streamx-common-github-actions/.github/actions/connector-github@v1
         env:
           STREAMX_CONNECTION_SOCKET_TIMEOUT: 30000
@@ -104,17 +112,19 @@ jobs:
           streamx-ingestion-token: ${{ secrets.STREAMX_INGESTION_GH_TOKEN }}
           event-type: 'com.streamx.blueprints.web-resource.published.v1'
           event-data: '{"type": "web-resource/static"}'
-          external-resource-url: ${{ steps.vars-md.outputs.eds_plain_page_url }}
-          subject: ${{ steps.vars-md.outputs.streamx_subject_plain }}
+          external-resource-url: ${{ steps.vars.outputs.eds_plain_page_url }}
+          subject: ${{ steps.vars.outputs.streamx_subject_plain }}
 
-      - name: Prepare variables for JSON (.json)
+      - name: Prepare ingestion variables (.json)
         if: endsWith(matrix.path, '.json')
         id: vars-json
         shell: bash
         run: |
+          sleep 1s
           streamx_subject="${{ matrix.path }}"
           eds_webresource_url="${{ vars.EDS_DOMAIN_URL }}$streamx_subject"
-
+          echo "Web resource URL: ${eds_webresource_url}"
+          echo "CloudEvent subject: ${streamx_subject}"
           echo "streamx_subject=${streamx_subject}" >> "$GITHUB_OUTPUT"
           echo "eds_webresource_url=$eds_webresource_url" >> "$GITHUB_OUTPUT"
 

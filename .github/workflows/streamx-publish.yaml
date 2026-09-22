@@ -34,16 +34,14 @@ jobs:
             exit 0
           fi
 
-          # Extract paths dynamically whether it is a single item or a batch array
+          echo "Raw payload:"
+          echo "$CLIENT_PAYLOAD" | jq .
+
           MATRIX_JSON=$(echo "$CLIENT_PAYLOAD" | jq -c '
-            if .paths then
-              [ .paths[] | if type == "object" then .path else . end ]
-            elif .path then
-              [ .path ]
-            else
-              []
-            end
+            [ ((.paths // .resources // .items // [])[]), (.path // empty) ]
+            | map(if type == "object" then (.resourcePath // .path) else . end)
             | map(select(type == "string" and (endswith(".md") or endswith(".json"))))
+            | unique
             | {include: map({path: .})}
           ')
 

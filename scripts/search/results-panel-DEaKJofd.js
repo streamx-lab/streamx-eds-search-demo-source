@@ -587,7 +587,7 @@ var renderResultsPanelError = () => {
 	return html`
     <div class="stx-results-panel__error">
       <span class="stx-results-panel__error-heading">
-        Something went wrong :(
+        Something went wrong.
       </span>
       <span class="stx-results-panel__error-text">
         Please try again later

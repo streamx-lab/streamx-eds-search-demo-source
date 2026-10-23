@@ -71,7 +71,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up homebrew
-        uses: 'Homebrew/actions/setup-homebrew@master'
+        uses: Homebrew/actions/setup-homebrew@fd832223f9f99ebf0244dd20658680e5d4aca049
 
       - name: Install and setup StreamX
         run: |

@@ -325,6 +325,7 @@ var createFacetNodeList = (field, buckets, context, parentPath = "") => {
 //#region src/components/results-panel/components/facets/components/facet-group.ts
 /** Turns an aggregation field name into a heading, e.g. `category_level0` → `Category`. */
 var humanizeFacetName = (field) => field.replace(/_level\d+$/, "").replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) || field;
+var toIdSafe = (value) => Array.from(value, (char) => /[A-Za-z0-9-]/.test(char) ? char : `_${char.codePointAt(0).toString(16)}_`).join("");
 var createFacetGroup = (field, aggregation, panelState, pathSeparator) => {
 	const buckets = aggregation?.buckets || [];
 	if (buckets.length === 0) return null;
@@ -341,7 +342,7 @@ var createFacetGroup = (field, aggregation, panelState, pathSeparator) => {
         class="stx-results-panel__facet-toggle"
         aria-expanded="false"
         aria-controls="${valuesId}"
-        id="facet-toggle-${field}"
+        id="facet-toggle-${toIdSafe(field)}"
       >
         <span class="stx-results-panel__facet-name"
           >${humanizeFacetName(field)}</span
@@ -690,15 +691,17 @@ var createPagination = (data, results, currentPage) => {
 };
 //#endregion
 //#region src/components/results-panel/components/results-header.ts
+var paginationInfoLabel = (results, currentPage, totalNumber) => {
+	const pagesNumber = Math.ceil(totalNumber / results.pageSize);
+	return pagesNumber > 0 ? results.labels.paginationInfo(currentPage, pagesNumber) : "";
+};
 var createResultsHeader = (data, results, currentPage) => {
 	const totalNumber = data.hits?.total.value || 0;
-	const pageSize = results.pageSize;
-	const pagesNumber = Math.ceil(totalNumber / pageSize);
 	const sortOptions = createSortOptions(results.sortParam, results.labels.sortBy(), results.sortFields, results.labels.defaultSortOption());
 	return html`
     <div class="stx-results-panel__results-header">
       <span class="stx-results-panel__page-number">
-        ${results.labels.paginationInfo(currentPage, pagesNumber)}
+        ${paginationInfoLabel(results, currentPage, totalNumber)}
       </span>
       <span class="stx-results-panel__total-number">
         ${results.labels.totalResults(totalNumber)}
@@ -761,10 +764,9 @@ var hideResultsLoading = (resultsContainer) => {
 };
 var updateResultsMeta = (resultsContainer, data, results, currentPage, resultsPanel) => {
 	const totalNumber = data.hits?.total.value || 0;
-	const pagesNumber = Math.ceil(totalNumber / results.pageSize);
 	const pageNumberEl = resultsContainer.querySelector(".stx-results-panel__page-number");
 	const totalNumberEl = resultsContainer.querySelector(".stx-results-panel__total-number");
-	if (pageNumberEl) pageNumberEl.textContent = results.labels.paginationInfo(currentPage, pagesNumber);
+	if (pageNumberEl) pageNumberEl.textContent = paginationInfoLabel(results, currentPage, totalNumber);
 	if (totalNumberEl) totalNumberEl.textContent = results.labels.totalResults(totalNumber);
 	const oldPagination = resultsContainer.querySelector(".stx-results-panel__pagination-container");
 	const pagination = createPagination(data, results, currentPage);
